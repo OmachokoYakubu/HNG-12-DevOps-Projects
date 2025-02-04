@@ -14,41 +14,33 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-def is_prime(num: int) -> bool:
-    if num < 2:
-        return False
-    for i in range(2, int(num ** 0.5) + 1):
-        if num % i == 0:
-            return False
-    return True
+# ... (your is_prime, is_armstrong, digit_sum, get_fun_fact functions)
 
-def is_armstrong(num: int) -> bool:
-    digits = [int(d) for d in str(num)]
-    power = len(digits)
-    return num == sum([d ** power for d in digits])
+# Safe evaluation function (limited to basic math operations)
+def safe_eval(expression: str) -> Union[int, float]:
+    allowed_chars = "0123456789+-*/^.()"  # Allowed characters for safe evaluation
+    if not all(c in allowed_chars for c in expression):
+        raise ValueError("Invalid characters in expression")
 
-def digit_sum(num: int) -> int:
-    return sum([int(d) for d in str(num)])
+    try:
+        # Use ast.literal_eval for safe evaluation of basic math operations
+        import ast
+        return ast.literal_eval(expression)
 
-def get_fun_fact(num: int) -> str:
-    response = requests.get(f'http://numbersapi.com/{num}/math')
-    if response.status_code == 200:
-        return response.text
-    return "No fun fact available."
+    except (SyntaxError, TypeError, ValueError):
+        raise ValueError("Invalid mathematical expression")
+
 
 @app.get("/api/classify-number")
-def classify_number(number: Union[int, float] = Query(..., description="Enter a number")):
+def classify_number(number: str = Query(..., description="Enter a number or a basic mathematical expression")):  # number is now a string
     try:
-        number = int(number)
-    except ValueError:
-        try:
-            number = float(number)
-        except ValueError:
-            raise HTTPException(status_code=400, detail={"number": str(number), "error": True})
+        number = safe_eval(number)  # Evaluate the expression safely
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail={"number": number, "error": str(e)})
 
     properties: List[str] = []
     is_armstrong_num = is_armstrong(number)
-    is_odd = int(number) % 2 != 0  # Convert to int for parity check
+    is_odd = int(number) % 2 != 0 if isinstance(number, (int, float)) else False # Check if number is odd or even
 
     if is_armstrong_num and is_odd:
         properties = ["armstrong", "odd"]
@@ -61,10 +53,9 @@ def classify_number(number: Union[int, float] = Query(..., description="Enter a 
 
     return {
         "number": number,
-        "is_prime": is_prime(number),  # No need to convert to int here
+        "is_prime": is_prime(int(number) if isinstance(number, (int, float)) else False),
         "is_perfect": False,
         "properties": properties,
-        "digit_sum": digit_sum(number),  # No need to convert to int here
-        "fun_fact": get_fun_fact(number),  # No need to convert to int here
+        "digit_sum": digit_sum(int(number) if isinstance(number, (int, float)) else 0),
+        "fun_fact": get_fun_fact(int(number) if isinstance(number, (int, float)) else 0),
     }
-
