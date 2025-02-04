@@ -39,20 +39,12 @@ def get_fun_fact(num: int) -> str:
 @app.get("/api/classify-number")
 def classify_number(number: Union[int, float] = Query(..., description="Enter a number")):
     try:
-        # Attempt conversion to int first
+        number = int(number)
+    except ValueError:
         try:
-            number = int(number)
+            number = float(number)
         except ValueError:
-            try:
-                number = float(number)
-            except ValueError:
-                raise HTTPException(status_code=400, detail={"number": number, "error": "Invalid input: Number must be an integer or float"})
-
-        if not isinstance(number, (int, float)):  # Redundant check, but good practice
-            raise HTTPException(status_code=400, detail={"number": number, "error": "Invalid input: Number must be an integer or float"})
-
-    except HTTPException as e: # Re-raise HTTPExceptions to be handled by FastAPI
-        raise e
+            raise HTTPException(status_code=400, detail={"number": str(number), "error": True})
 
     properties: List[str] = []
     is_armstrong_num = is_armstrong(number)
