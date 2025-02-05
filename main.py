@@ -1,11 +1,11 @@
 from fastapi import FastAPI, Query, HTTPException
 import requests
-from typing import List
+from typing import Union, List
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# CORS configuration
+# CORS configuration (customize as needed)
 origins = [
     "http://localhost",
     "http://localhost:8080",
@@ -21,27 +21,24 @@ app.add_middleware(
 )
 
 def is_prime(n: int) -> bool:
-    """Check if a number is prime."""
     if n < 2:
         return False
-    for i in range(2, int(abs(n) ** 0.5) + 1):
+    for i in range(2, int(n**0.5) + 1):
         if n % i == 0:
             return False
     return True
 
 def is_armstrong(n: int) -> bool:
-    """Check if a number is an Armstrong number."""
     num_str = str(abs(n))
     digits = [int(d) for d in num_str]
     power = len(digits)
-    return sum(d ** power for d in digits) == abs(n)
+    return sum(d**power for d in digits) == abs(n)
 
 def digit_sum(n: int) -> int:
-    """Calculate the sum of the digits of a number."""
-    return sum(int(d) for d in str(abs(n)))
+    num_str = str(abs(n))
+    return sum(int(d) for d in num_str)
 
 def get_fun_fact(n: int) -> str:
-    """Fetch a fun fact about a number from the Numbers API."""
     try:
         response = requests.get(f"http://numbersapi.com/{n}/math")
         response.raise_for_status()
@@ -51,22 +48,19 @@ def get_fun_fact(n: int) -> str:
 
 @app.get("/api/classify-number")
 def classify_number(number: str = Query(..., description="Enter a number")):
-    """
-    API endpoint to classify a number.
-    
-    Accepts numbers in different formats (negative, string, float, etc.).
-    """
     try:
-        # Convert input to an integer, even if it's a float or string
-        number_int = int(float(number))  
+        number = int(float(number))  # Convert input to an integer, even if in float form
     except ValueError:
         raise HTTPException(
             status_code=400,
-            detail={"number": number, "error": "Invalid input: Number must be an integer or float"}
+            detail={
+                "number": number,  # Keep the original invalid input
+                "error": "Invalid input: Number must be an integer"
+            }
         )
 
-    is_negative = number_int < 0
-    abs_number = abs(number_int)
+    is_negative = number < 0
+    abs_number = abs(number)
 
     properties: List[str] = []
     is_armstrong_num = is_armstrong(abs_number)
@@ -82,15 +76,15 @@ def classify_number(number: str = Query(..., description="Enter a number")):
         properties = ["even"]
 
     return {
-        "number": number_int,
+        "number": number,
         "is_prime": is_prime(abs_number),
-        "is_perfect": False,  # No perfect number check in this version
+        "is_perfect": False,
         "properties": properties,
         "digit_sum": digit_sum(abs_number),
         "fun_fact": get_fun_fact(abs_number),
     }
 
-# Run the app with Uvicorn
+# Proper Uvicorn entry point for running the server
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
