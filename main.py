@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException 
 import requests
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
@@ -58,15 +58,15 @@ def classify_number(number: str = Query(..., description="Enter a number")):
     """
     try:
         # Convert input to an integer, even if it's a float or string
-        number = int(float(number))  
+        parsed_number = int(float(number))  
     except ValueError:
         raise HTTPException(
             status_code=400,
             detail={"number": number, "error": "Invalid input: Number must be an integer or float"}
         )
 
-    is_negative = number < 0
-    abs_number = abs(number)
+    is_negative = parsed_number < 0
+    abs_number = abs(parsed_number)
 
     properties: List[str] = []
     is_armstrong_num = is_armstrong(abs_number)
@@ -82,7 +82,7 @@ def classify_number(number: str = Query(..., description="Enter a number")):
         properties = ["even"]
 
     return {
-        "number": number,
+        "number": parsed_number,
         "is_prime": is_prime(abs_number),
         "is_perfect": False,  # No perfect number check in this version
         "properties": properties,
