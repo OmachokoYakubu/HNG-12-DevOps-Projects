@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, Request
+from fastapi.responses import JSONResponse
 import requests
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
@@ -49,6 +50,13 @@ def get_fun_fact(n: int) -> str:
     except requests.exceptions.RequestException:
         return "No fun fact available."
 
+@app.exception_handler(ValueError)
+async def value_error_handler(request: Request, exc: ValueError):
+    return JSONResponse(
+        status_code=400,
+        content={"number": request.query_params.get("number", ""), "error": True},
+    )
+
 @app.get("/api/classify-number")
 def classify_number(number: str = Query(..., description="Enter a number")):
     """
@@ -62,10 +70,7 @@ def classify_number(number: str = Query(..., description="Enter a number")):
         # Convert input to an integer, even if it's a float or string
         parsed_number = int(float(number))  
     except ValueError:
-        raise HTTPException(
-            status_code=400,
-            detail={"number": original_input, "error": True}
-        )
+        raise ValueError("Invalid input")
 
     is_negative = parsed_number < 0
     abs_number = abs(parsed_number)
