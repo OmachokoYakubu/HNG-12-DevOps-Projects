@@ -9,7 +9,7 @@ app = FastAPI()
 origins = [
     "http://localhost",  # Allows requests from localhost
     "http://localhost:8080",  # Allows requests from localhost on port 8080
-    "*", # Allows requests from any origin (USE WITH CAUTION IN PRODUCTION)
+    "*",  # Allows requests from any origin (USE WITH CAUTION IN PRODUCTION)
 ]
 
 app.add_middleware(
@@ -35,40 +35,31 @@ def is_armstrong(n: int) -> bool:
     return sum(d**power for d in digits) == abs(n)
 
 def digit_sum(n: int) -> int:
-    num_str = str(abs(n))
-    return sum(int(d) for d in num_str)
+    return sum(int(d) for d in str(abs(n)))
 
 def get_fun_fact(n: int) -> str:
     try:
-        response = requests.get(f"http://numbersapi.com/{n}/math")  # Use /math endpoint
-        response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+        response = requests.get(f"http://numbersapi.com/{n}/math")
+        response.raise_for_status()
         return response.text
-    except requests.exceptions.RequestException as e:
+    except requests.exceptions.RequestException:
         return "No fun fact available."
 
 @app.get("/api/classify-number")
-def classify_number(number: Union[int, float] = Query(..., description="Enter a number")):
+def classify_number(number: Union[str, int, float] = Query(..., description="Enter a number")):
     try:
-        try:
-            number = int(number)
-        except ValueError:
-            try:
-                number = float(number)
-            except ValueError:
-                raise HTTPException(status_code=400, detail={"number": number, "error": "Invalid input: Number must be an integer or float"})
-
-        if not isinstance(number, (int, float)):
-            raise HTTPException(status_code=400, detail={"number": number, "error": "Invalid input: Number must be an integer or float"})
-
-    except HTTPException as e:
-        raise e
+        # Convert input to a proper integer, even if it's a float or string
+        number = float(number)  # Ensure it's numeric first
+        number = int(round(number))  # Convert float to integer (rounding if necessary)
+    except ValueError:
+        raise HTTPException(status_code=400, detail={"error": "Invalid input: Number must be an integer or float"})
 
     is_negative = number < 0
-    number = abs(number)
-
+    abs_number = abs(number)
+    
     properties: List[str] = []
-    is_armstrong_num = is_armstrong(number)
-    is_odd = int(number) % 2 != 0
+    is_armstrong_num = is_armstrong(abs_number)
+    is_odd = abs_number % 2 != 0
 
     if is_armstrong_num and is_odd:
         properties = ["armstrong", "odd"]
@@ -80,15 +71,16 @@ def classify_number(number: Union[int, float] = Query(..., description="Enter a 
         properties = ["even"]
 
     return {
-        "number": ( -number if is_negative else number),
-        "is_prime": is_prime(number),
-        "is_perfect": False,
+        "number": number,  # Keep original sign
+        "is_prime": is_prime(abs_number),
+        "is_perfect": False,  # Placeholder for future implementation
         "properties": properties,
-        "digit_sum": digit_sum(number),
-        "fun_fact": get_fun_fact(number),
+        "digit_sum": digit_sum(abs_number),
+        "fun_fact": get_fun_fact(abs_number),
     }
 
 # To run the app using Uvicorn:
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
