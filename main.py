@@ -56,13 +56,15 @@ def classify_number(number: str = Query(..., description="Enter a number")):
     
     Accepts numbers in different formats (negative, string, float, etc.).
     """
+    original_input = number  # Store original input before any processing
+
     try:
         # Convert input to an integer, even if it's a float or string
         parsed_number = int(float(number))  
     except ValueError:
         raise HTTPException(
             status_code=400,
-            detail={"number": number, "error": "Invalid input: Number must be an integer or float"}
+            detail={"number": original_input, "error": "Invalid input: Number must be an integer or float"}
         )
 
     is_negative = parsed_number < 0
