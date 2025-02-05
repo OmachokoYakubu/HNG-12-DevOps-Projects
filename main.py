@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, HTTPException  
+from fastapi import FastAPI, Query, HTTPException 
 import requests
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
@@ -62,7 +62,6 @@ def classify_number(number: str = Query(..., description="Enter a number")):
         # Convert input to an integer, even if it's a float or string
         parsed_number = int(float(number))  
     except ValueError:
-        # Returning the invalid input as part of the response
         raise HTTPException(
             status_code=400,
             detail={"number": original_input, "error": "Invalid input: Number must be an integer or float"}
@@ -97,4 +96,3 @@ def classify_number(number: str = Query(..., description="Enter a number")):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
