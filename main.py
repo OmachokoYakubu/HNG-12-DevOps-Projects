@@ -64,7 +64,7 @@ def classify_number(number: str = Query(..., description="Enter a number")):
     except ValueError:
         raise HTTPException(
             status_code=400,
-            detail={"number": str(original_input), "error": "Invalid input: Number must be an integer or float"}
+            detail={"number": str(original_input), "error": True}
         )
 
     is_negative = parsed_number < 0
