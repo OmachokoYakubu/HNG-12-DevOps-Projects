@@ -62,7 +62,10 @@ def classify_number(number: str = Query(..., description="Enter a number")):
         # Convert input to an integer, even if it's a float or string
         parsed_number = int(float(number))  
     except ValueError:
-        return {"number": original_input, "error": True}
+        raise HTTPException(
+            status_code=400,
+            detail={"number": original_input, "error": True}
+        )
 
     is_negative = parsed_number < 0
     abs_number = abs(parsed_number)
